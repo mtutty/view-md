@@ -51,6 +51,14 @@ dotnet run --project tools/SmokeTest -- path/to/file.md out.png
 dotnet run --project tools/SmokeTest -- path/to/file.md out.png out.pdf   # also exercise PDF export
 ```
 
+## Version
+
+The app version lives in a single file, `version.txt`, at the repo root —
+edit it to bump the version. The build stamps it together with the current
+git commit's short hash (plus a `-dirty` suffix for an uncommitted working
+tree) into the assembly automatically; no separate bump tooling. See it in
+the running app via Help -> About view-md.
+
 ## Packaging (.deb)
 
 ```sh

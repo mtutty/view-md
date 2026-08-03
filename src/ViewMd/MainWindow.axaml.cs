@@ -311,12 +311,14 @@ public partial class MainWindow : Window
         }
     }
 
-    private void ShowError(string message)
+    private void ShowError(string message) => ShowMessage("view-md", message);
+
+    private void ShowMessage(string title, string message)
     {
         var okButton = new Button { Content = "OK", Width = 80, HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right };
         var dialog = new Window
         {
-            Title = "view-md",
+            Title = title,
             Width = 420,
             SizeToContent = SizeToContent.Height,
             CanResize = false,
@@ -331,6 +333,9 @@ public partial class MainWindow : Window
         okButton.Click += (_, _) => dialog.Close();
         _ = dialog.ShowDialog(this);
     }
+
+    private void OnAboutClick(object? sender, RoutedEventArgs e) =>
+        ShowMessage("About view-md", $"view-md {VersionInfo.InformationalVersion}\n\nA lightweight, fast-starting native Markdown viewer.");
 
     // --- Search ---
 

@@ -27,6 +27,9 @@
                 <Separator />
                 <MenuItem Header="_Preferences..." Click="OnPreferencesClick" />
             </MenuItem>
+            <MenuItem Header="_Help">
+                <MenuItem Header="_About view-md..." Click="OnAboutClick" />
+            </MenuItem>
         </Menu>
 
         <Grid Name="BodyGrid">

@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net10.0</TargetFramework>
@@ -18,6 +18,63 @@
          since it only takes effect during an actual publish. -->
     <PublishAot>true</PublishAot>
   </PropertyGroup>
+
+  <!-- Versioning: base version comes from /version.txt (source of truth, see
+       .charter/decisions.md), git short hash is appended so a build can be
+       traced back to the exact commit. CI passes -p:GitHashOverride=... (from
+       Jenkins' own GIT_COMMIT) to avoid needing git inside the build
+       container; local/dev builds fall back to invoking git directly. -->
+  <PropertyGroup>
+    <RepoRoot>$(MSBuildThisFileDirectory)../../</RepoRoot>
+  </PropertyGroup>
+
+  <Target Name="GenerateVersionInfo" BeforeTargets="CoreCompile;GetAssemblyVersion">
+    <ReadLinesFromFile File="$(RepoRoot)version.txt">
+      <Output TaskParameter="Lines" ItemName="_VersionLines" />
+    </ReadLinesFromFile>
+    <PropertyGroup>
+      <_BaseVersion>@(_VersionLines)</_BaseVersion>
+      <_GitHash Condition="'$(GitHashOverride)' != ''">$(GitHashOverride)</_GitHash>
+    </PropertyGroup>
+
+    <Exec Condition="'$(_GitHash)' == '' and Exists('$(RepoRoot).git')"
+          Command="git -C &quot;$(RepoRoot)&quot; rev-parse --short HEAD"
+          ConsoleToMSBuild="true"
+          IgnoreExitCode="true"
+          StandardOutputImportance="low">
+      <Output TaskParameter="ConsoleOutput" PropertyName="_GitHashRaw" />
+    </Exec>
+    <Exec Condition="'$(_GitHash)' == '' and Exists('$(RepoRoot).git')"
+          Command="git -C &quot;$(RepoRoot)&quot; status --porcelain"
+          ConsoleToMSBuild="true"
+          IgnoreExitCode="true"
+          StandardOutputImportance="low">
+      <Output TaskParameter="ConsoleOutput" PropertyName="_GitDirtyRaw" />
+    </Exec>
+
+    <PropertyGroup>
+      <_GitHash Condition="'$(_GitHash)' == '' and '$(_GitHashRaw)' != ''">$(_GitHashRaw)</_GitHash>
+      <_GitHash Condition="'$(_GitHash)' == ''">unknown</_GitHash>
+      <_GitHash Condition="'$(_GitHash)' != 'unknown' and '$(_GitDirtyRaw)' != ''">$(_GitHash)-dirty</_GitHash>
+      <Version>$(_BaseVersion)</Version>
+      <InformationalVersion>$(_BaseVersion)+$(_GitHash)</InformationalVersion>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <_VersionInfoLines Include="// Auto-generated at build time from version.txt + git hash. Do not edit." />
+      <_VersionInfoLines Include="namespace ViewMd%3B" />
+      <_VersionInfoLines Include="internal static class VersionInfo" />
+      <_VersionInfoLines Include="{" />
+      <_VersionInfoLines Include="    public const string BaseVersion = &quot;$(_BaseVersion)&quot;%3B" />
+      <_VersionInfoLines Include="    public const string GitHash = &quot;$(_GitHash)&quot;%3B" />
+      <_VersionInfoLines Include="    public const string InformationalVersion = &quot;$(_BaseVersion)+$(_GitHash)&quot;%3B" />
+      <_VersionInfoLines Include="}" />
+    </ItemGroup>
+    <WriteLinesToFile File="$(IntermediateOutputPath)VersionInfo.g.cs" Lines="@(_VersionInfoLines)" Overwrite="true" WriteOnlyWhenDifferent="true" />
+    <ItemGroup>
+      <Compile Include="$(IntermediateOutputPath)VersionInfo.g.cs" />
+    </ItemGroup>
+  </Target>
 
   <ItemGroup>
     <PackageReference Include="Avalonia" Version="12.1.1" />

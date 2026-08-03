@@ -36,13 +36,14 @@ app:
 
 stack:
   language: csharp
-  runtime: dotnet-9-nativeaot
-  ui-framework: avalonia-ui-11
+  runtime: dotnet-10-nativeaot           # linux-x64 only; win-x64/osx-arm64 are self-contained JIT — see decisions.md
+  ui-framework: avalonia-ui-12.1.1
   markdown-parser: markdig
-  markdown-renderer: markdown.avalonia   # verify still maintained at generation time; fallback is a thin custom Markdig->Avalonia visual-tree renderer
-  pdf-export: skiasharp-skdocument       # reuses Avalonia's existing SkiaSharp dependency, no new native lib
+  markdown-renderer: custom              # hand-rolled Markdig-AST-to-Avalonia-controls renderer; Markdown.Avalonia was alpha-only for Avalonia 12 at generation time — see decisions.md
+  pdf-export: skiasharp-skdocument       # reuses Avalonia's existing SkiaSharp dependency (version-pinned to match, see decisions.md), no new native lib
   config-storage: local-json             # ~/.config/view-md/
   package-manager: nuget/dotnet-cli
+  versioning: version.txt + git short hash, stamped into the assembly at build time via an MSBuild target (src/ViewMd/ViewMd.csproj) — no separate version-bump tooling
   note: >
     No entry in Charter's stacks.md/libraries.md fits a native desktop app;
     this stack was chosen directly rather than selected from the registry.
