@@ -140,3 +140,14 @@ capabilities:
       canvas, reusing Avalonia's existing Skia dependency rather than
       pulling in a separate PDF library (e.g. no wkhtmltopdf/Puppeteer,
       which would reintroduce heavy/webview-adjacent dependencies).
+
+  preferences:
+    theme-modes: [System, Light, Dark]
+    typography: [font-family, base-font-size, line-height-multiplier, document-margin]
+    default-line-height-multiplier: 1.1
+    context: >
+      Added post-init, per explicit request. Theme "System" relies entirely
+      on Avalonia's built-in RequestedThemeVariant=Default OS-following
+      behavior, not custom detection code. Typography settings are a single
+      global scale (one base size, one line-height multiplier, one uniform
+      margin), not a full per-element style system.

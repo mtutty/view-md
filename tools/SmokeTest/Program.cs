@@ -36,7 +36,7 @@ if (args.Length > 2)
     // Exercise MarkdownRenderer + PdfExportService directly, end to end, in their
     // own throwaway window (avoids reaching into MainWindow's private fields).
     var pdfPath = args[2];
-    var renderer = new ViewMd.Rendering.MarkdownRenderer(Path.GetDirectoryName(mdPath)!, _ => { });
+    var renderer = new ViewMd.Rendering.MarkdownRenderer(Path.GetDirectoryName(mdPath)!, _ => { }, ViewMd.Rendering.MarkdownRenderOptions.Default);
     var content = renderer.Render(File.ReadAllText(mdPath));
 
     var pdfWindow = new Avalonia.Controls.Window { Content = content, Width = 1000, Height = 1500 };

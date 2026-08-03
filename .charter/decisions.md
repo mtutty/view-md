@@ -138,3 +138,53 @@ in the future must be paired with checking (and likely bumping) this
 `SkiaSharp` pin to whatever version that Avalonia release depends on —
 check `Avalonia.Skia`'s `.nuspec` dependency list, don't just take NuGet's
 default resolution.
+
+---
+
+## OS theme detection uses Avalonia's built-in PlatformSettings, not custom code — 2026-08-03
+**Decision:** Implement "follow the OS light/dark setting" by leaving
+`Application.RequestedThemeVariant` at `ThemeVariant.Default` (the scaffold
+default), and implement the Light/Dark override by setting it to
+`ThemeVariant.Light`/`ThemeVariant.Dark` explicitly. No platform-specific
+detection code (no GSettings/registry/NSApplication calls).
+**Context:** The request was to observe the OS-level theme and let the user
+override it. Checked against Avalonia's own theme-variant docs before
+implementing: `RequestedThemeVariant = Default` (or unset) already means
+"inherit from the system," and Avalonia's `PlatformSettings` abstraction
+handles the actual OS-specific detection — including live updates if the
+OS setting changes while the app is running — on all three target
+platforms.
+**Rationale:** Writing custom per-OS theme-detection code would duplicate
+functionality Avalonia already provides, for no benefit, and would be a
+second thing to keep working across Linux/Windows/macOS instead of relying
+on the UI framework's own cross-platform abstraction.
+**Alternatives considered:** None seriously — this was a "verify the
+framework already does this" check, not a design choice with real
+alternatives.
+**Consequences:** view-md has no explicit OS-theme-changed event handler;
+if Avalonia's automatic re-styling on OS change ever proves insufficient
+(e.g. some other part of the UI doesn't visually update), the fix is to
+subscribe to `Application.Current.PlatformSettings.ColorValuesChanged` or
+`TopLevel.ActualThemeVariantChanged`, not to add OS-specific detection.
+
+---
+
+## Preferences typography: one global scale, not per-element styling — 2026-08-03
+**Decision:** `AppSettings`/`MarkdownRenderOptions` expose exactly four
+appearance knobs — font family, base font size, line-height multiplier,
+document margin — applied uniformly across the rendered document, rather
+than a richer per-block-type style system (e.g. independently configurable
+heading fonts, per-side margins, code-block font size separate from body).
+**Context:** The request was general ("some font face/size/line
+spacing/margin/padding values"), not a specific enumerated set of controls.
+**Rationale:** Four scalar settings cover the realistic "make text more
+readable to me" use case with a small, easy-to-understand Preferences
+dialog. Line-height is deliberately a *multiplier* of font size (not a
+stored pixel value) so it continues to make sense as font size changes.
+**Alternatives considered:** A full CSS-like box model (independent
+margin/padding per side, per-element font overrides) — rejected as
+speculative complexity with no concrete use case driving it yet.
+**Consequences:** If a future request needs finer control (e.g. "headings
+should use a different font than body text"), that's a deliberate
+expansion of `MarkdownRenderOptions`, not something the current shape
+accidentally already supports.

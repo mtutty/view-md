@@ -24,6 +24,8 @@
             </MenuItem>
             <MenuItem Header="_Edit">
                 <MenuItem Header="_Find..." Click="OnFindClick" InputGesture="Ctrl+F" />
+                <Separator />
+                <MenuItem Header="_Preferences..." Click="OnPreferencesClick" />
             </MenuItem>
         </Menu>
 

@@ -44,6 +44,22 @@ currently open folder.
 **Payload:** The rendered visual tree/text content already in memory.
 **Why:** Search operates on what's already on screen; no re-parsing.
 
+## preferences → markdown-rendering
+**Trigger:** User clicks OK in the Preferences dialog (Edit -> Preferences...).
+**Payload:** Updated `AppSettings` (theme, font family, base font size,
+line-height multiplier, document margin), persisted, then re-render of the
+currently open file with a freshly built `MarkdownRenderOptions`.
+**Why:** Changes should be visible immediately, not require a restart or a
+manual re-open of the file.
+
+## preferences → app theme
+**Trigger:** Same Preferences OK action, or app startup.
+**Payload:** `AppSettings.Theme` mapped to `Application.RequestedThemeVariant`
+(System -> Default, Light -> Light, Dark -> Dark).
+**Why:** Theme is an application-wide concern (Avalonia's FluentTheme
+resources), not scoped to the document pane, so it's applied at the
+`Application` level rather than per-window.
+
 ## markdown-rendering → export-to-pdf
 **Trigger:** User invokes "Export to PDF" while a document is rendered.
 **Payload:** The rendered visual tree already in memory.

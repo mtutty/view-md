@@ -4,6 +4,7 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
+using Avalonia.Styling;
 using ViewMd.Models;
 using ViewMd.Rendering;
 using ViewMd.Services;
@@ -38,6 +39,7 @@ public partial class MainWindow : Window
         Width = _settings.Current.WindowWidth;
         Height = _settings.Current.WindowHeight;
 
+        ApplyTheme();
         SetSidebarVisible(_settings.Current.SidebarVisible);
 
         _watcher.FileChanged += () =>
@@ -98,7 +100,7 @@ public partial class MainWindow : Window
         }
 
         var baseDir = Path.GetDirectoryName(path) ?? Environment.CurrentDirectory;
-        var renderer = new MarkdownRenderer(baseDir, OnLinkActivated);
+        var renderer = new MarkdownRenderer(baseDir, OnLinkActivated, BuildRenderOptions());
         var rendered = renderer.Render(text);
 
         DocumentHost.Content = rendered;
@@ -228,6 +230,52 @@ public partial class MainWindow : Window
         var fullFile = Path.GetFullPath(filePath);
         var fullDir = Path.GetFullPath(directoryPath).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
         return fullFile.StartsWith(fullDir, StringComparison.Ordinal);
+    }
+
+    private MarkdownRenderOptions BuildRenderOptions() => new(
+        _settings.Current.FontFamily,
+        _settings.Current.BaseFontSize,
+        _settings.Current.LineHeightMultiplier,
+        _settings.Current.DocumentMargin);
+
+    // "Default" already means "follow the OS" in Avalonia's own theming system
+    // (see .charter/decisions.md) — no custom OS-theme detection needed here.
+    private void ApplyTheme()
+    {
+        if (Application.Current is null)
+        {
+            return;
+        }
+
+        Application.Current.RequestedThemeVariant = _settings.Current.Theme switch
+        {
+            "Light" => ThemeVariant.Light,
+            "Dark" => ThemeVariant.Dark,
+            _ => ThemeVariant.Default,
+        };
+    }
+
+    private async void OnPreferencesClick(object? sender, RoutedEventArgs e)
+    {
+        var dialog = new PreferencesWindow(_settings.Current);
+        await dialog.ShowDialog(this);
+        if (!dialog.Accepted)
+        {
+            return;
+        }
+
+        _settings.Current.Theme = dialog.ThemeMode;
+        _settings.Current.FontFamily = dialog.SelectedFontFamily;
+        _settings.Current.BaseFontSize = dialog.BaseFontSize;
+        _settings.Current.LineHeightMultiplier = dialog.LineHeightMultiplier;
+        _settings.Current.DocumentMargin = dialog.DocumentMargin;
+        _settings.Save();
+
+        ApplyTheme();
+        if (_currentFilePath is not null)
+        {
+            OpenFile(_currentFilePath, recordMru: false);
+        }
     }
 
     private void SetSidebarVisible(bool visible)

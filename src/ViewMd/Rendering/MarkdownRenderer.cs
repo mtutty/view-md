@@ -20,11 +20,13 @@ public sealed class MarkdownRenderer
 
     private readonly string _baseDirectory;
     private readonly Action<string> _onLinkActivated;
+    private readonly MarkdownRenderOptions _options;
 
-    public MarkdownRenderer(string baseDirectory, Action<string> onLinkActivated)
+    public MarkdownRenderer(string baseDirectory, Action<string> onLinkActivated, MarkdownRenderOptions options)
     {
         _baseDirectory = baseDirectory;
         _onLinkActivated = onLinkActivated;
+        _options = options;
     }
 
     public Control Render(string markdownText)
@@ -35,7 +37,7 @@ public sealed class MarkdownRenderer
         {
             Orientation = Orientation.Vertical,
             Spacing = 4,
-            Margin = new Avalonia.Thickness(20),
+            Margin = new Avalonia.Thickness(_options.DocumentMargin),
         };
 
         foreach (var block in document)
@@ -81,32 +83,49 @@ public sealed class MarkdownRenderer
 
     private Control RenderHeading(HeadingBlock heading)
     {
-        var fontSize = heading.Level switch
+        // Ratios preserve the original fixed sizes (28/24/20/17/15/14) at the
+        // default 14px base, while scaling with the user's configured base size.
+        var ratio = heading.Level switch
         {
-            1 => 28,
-            2 => 24,
-            3 => 20,
-            4 => 17,
-            5 => 15,
-            _ => 14,
+            1 => 2.0,
+            2 => 1.7,
+            3 => 1.4,
+            4 => 1.2,
+            5 => 1.05,
+            _ => 1.0,
         };
 
         var text = new TextBlock
         {
-            FontSize = fontSize,
+            FontSize = _options.BaseFontSize * ratio,
             FontWeight = FontWeight.Bold,
             TextWrapping = TextWrapping.Wrap,
             Margin = new Avalonia.Thickness(0, heading.Level == 1 ? 12 : 8, 0, 4),
         };
+        ApplyFontFamily(text);
         AppendInlines(text.Inlines!, heading.Inline);
         return text;
     }
 
     private Control RenderParagraph(ParagraphBlock paragraph)
     {
-        var text = new TextBlock { TextWrapping = TextWrapping.Wrap };
+        var text = new TextBlock
+        {
+            TextWrapping = TextWrapping.Wrap,
+            FontSize = _options.BaseFontSize,
+            LineHeight = _options.BaseFontSize * _options.LineHeightMultiplier,
+        };
+        ApplyFontFamily(text);
         AppendInlines(text.Inlines!, paragraph.Inline);
         return text;
+    }
+
+    private void ApplyFontFamily(TextBlock text)
+    {
+        if (!string.IsNullOrWhiteSpace(_options.FontFamily))
+        {
+            text.FontFamily = new FontFamily(_options.FontFamily);
+        }
     }
 
     private Control RenderQuote(QuoteBlock quote)
@@ -156,7 +175,14 @@ public sealed class MarkdownRenderer
 
         var marker = isTask
             ? (Control)new CheckBox { IsChecked = isChecked, IsEnabled = false, Margin = new Avalonia.Thickness(0, 1, 4, 0) }
-            : new TextBlock { Text = ordered ? $"{index}." : "•", Width = 24, TextAlignment = Avalonia.Media.TextAlignment.Right, Margin = new Avalonia.Thickness(0, 0, 4, 0) };
+            : new TextBlock
+            {
+                Text = ordered ? $"{index}." : "•",
+                Width = 24,
+                FontSize = _options.BaseFontSize,
+                TextAlignment = Avalonia.Media.TextAlignment.Right,
+                Margin = new Avalonia.Thickness(0, 0, 4, 0),
+            };
 
         var content = new StackPanel { Orientation = Orientation.Vertical, Spacing = 2 };
         foreach (var child in listItem)
@@ -194,6 +220,7 @@ public sealed class MarkdownRenderer
         {
             Text = code.Lines.ToString(),
             FontFamily = "monospace",
+            FontSize = _options.BaseFontSize,
             TextWrapping = TextWrapping.NoWrap,
         };
 
