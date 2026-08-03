@@ -59,28 +59,43 @@ git commit's short hash (plus a `-dirty` suffix for an uncommitted working
 tree) into the assembly automatically; no separate bump tooling. See it in
 the running app via Help -> About view-md.
 
-## Packaging (.deb)
+## Packaging
+
+Three platforms, one Linux build host. Only the Linux build is NativeAOT —
+Native AOT cannot cross-compile between operating systems (see
+`.charter/decisions.md`), so the Windows/macOS builds are standard
+self-contained (JIT) publishes cross-compiled from Linux.
 
 ```sh
-./packaging/build-deb.sh
-sudo dpkg -i dist/view-md_0.1.0_amd64.deb
+./packaging/build-deb.sh      # Linux, NativeAOT, produces dist/view-md_<version>_amd64.deb
+./packaging/build-windows.sh  # Windows, self-contained JIT, produces dist/view-md_<version>_win-x64.zip
+./packaging/build-macos.sh    # macOS, self-contained JIT + .app bundle, unsigned — see decisions.md
 ```
 
-To make it the default handler for `.md` files after installing:
+Linux install + set as default handler:
 
 ```sh
-xdg-mime default view-md.desktop text/markdown
+sudo dpkg -i dist/view-md_<version>_amd64.deb
+xdg-mime default view-md.desktop text/markdown   # printed by dpkg -i too
 ```
 
-(`sudo dpkg -i` prints this same instruction after install.)
+Windows: unzip and run `view-md.exe`; run
+`packaging/windows/register-file-association.ps1` from the unzipped folder
+to register it as an available `.md` handler (per-user, no admin rights;
+**unverified — written and checked against Microsoft's registry docs, but
+not tested on an actual Windows machine**).
+
+macOS: unzip and run `view-md.app`. Unsigned — see the comment at the top
+of `build-macos.sh` for what that means and why (no Apple Developer account
+in scope for this project).
 
 ## Status
 
 Charter complete. Core capabilities implemented and verified: rendering,
 MRU, directory browser, file association/CLI dispatch, auto-reload, search,
-PDF export, NativeAOT publish, and `.deb` packaging. See
-`.charter/decisions.md` for two dependency issues found and fixed during
-implementation (an alpha-only Markdown renderer package, and a SkiaSharp
-version mismatch) — both are exactly the class of "won't install/won't run"
-problem this project set out to avoid, so they're worth reading before
-touching the rendering or PDF-export code.
+PDF export, theming (OS-follow + override), configurable typography,
+versioning, and packaging for Linux/Windows/macOS. See
+`.charter/decisions.md` for the dependency and platform issues found and
+fixed along the way (an alpha-only Markdown renderer package, a SkiaSharp
+version mismatch, and NativeAOT's cross-OS limitation) — worth reading
+before touching rendering, PDF export, or packaging.

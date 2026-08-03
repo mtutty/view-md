@@ -188,3 +188,62 @@ speculative complexity with no concrete use case driving it yet.
 should use a different font than body text"), that's a deliberate
 expansion of `MarkdownRenderOptions`, not something the current shape
 accidentally already supports.
+
+---
+
+## Windows/macOS builds are self-contained JIT, not NativeAOT — 2026-08-03
+**Decision:** `packaging/build-windows.sh` and `packaging/build-macos.sh`
+cross-publish `win-x64`/`osx-arm64` from the Linux build host as standard
+self-contained (JIT) deployments, not NativeAOT. Only `packaging/build-deb.sh`
+(linux-x64, built natively) uses `PublishAot`.
+**Context:** Checked against Microsoft Learn's "Cross-compilation - .NET"
+page before implementing: NativeAOT does not support cross-OS compilation —
+there's no standardized way to obtain a native macOS SDK on Linux, or a
+Windows SDK on Linux, so AOT can only target the OS it's built on (limited
+cross-*architecture* support exists, e.g. x64->arm64 on the same OS, but
+that's not what's needed here). A plain self-contained publish has no such
+restriction and was verified to actually work: both `win-x64` and
+`osx-arm64` were cross-published from this Linux host and produced valid
+PE32+ and Mach-O binaries respectively (checked directly, not assumed).
+`src/ViewMd/ViewMd.csproj` scopes `PublishAot` to
+`'$(RuntimeIdentifier)' == 'linux-x64'` so publishing the other RIDs from
+Linux doesn't attempt (and fail at) AOT compilation.
+**Rationale:** Given a single Linux docker build agent, this is the only
+way to produce genuinely runnable Windows/macOS builds at all. The
+alternative — not shipping Windows/macOS builds — was explicitly what the
+user asked to avoid unless truly prohibitive, and this isn't: it's a
+one-line RID swap, verified working.
+**Alternatives considered:** Windows/macOS-hosted build agents (not
+available — only one docker-capable Linux agent label was given); skipping
+Windows/macOS entirely (rejected — cross-publish works fine, so skipping
+would be leaving something achievable on the table).
+**Consequences:** Windows/macOS cold-start is JIT speed, not AOT speed —
+noticeably slower first paint than the Linux build, though still normal
+JIT startup, not egregious. Binaries are much larger (~74-113MB zipped vs
+~13MB for the Linux .deb) since nothing is trimmed. If Windows/macOS build
+agents become available later, switching those two scripts to build
+natively (with AOT) on their own OS is the natural upgrade — the app code
+itself doesn't change, only which host builds which artifact.
+
+---
+
+## macOS build is unsigned; no notarization — 2026-08-03
+**Decision:** `packaging/build-macos.sh` produces an unsigned `.app` bundle
+with no code signing and no notarization step.
+**Context:** Proper macOS distribution requires an Apple Developer Program
+membership ($99/year) plus running the built app through Apple's
+notarization service. Without both, Gatekeeper blocks the app from opening
+on any Mac other than the one that built it (the user can still bypass this
+per-app via right-click -> Open, or `xattr -dr com.apple.quarantine`).
+**Rationale:** This is a real, recurring monetary cost for a
+personal/small-scale project, not an engineering task — it doesn't belong
+in this pass. The unsigned build is genuinely usable for the
+person who builds it for their own Mac, which covers the stated use case.
+**Alternatives considered:** Ad-hoc self-signing (rejected: still triggers
+Gatekeeper for anyone but the builder, so it wouldn't actually solve
+anything — only real Apple notarization does); skipping macOS entirely
+(rejected — see the cross-publish decision above, an unsigned build is
+still meaningfully useful).
+**Consequences:** If public macOS distribution is ever wanted, that's a
+new decision requiring an Apple Developer account and a notarization step
+added to `build-macos.sh` — not a natural extension of the current script.

@@ -2,6 +2,9 @@ bin/
 obj/
 dist/
 packaging/.publish/
+packaging/.publish-win/
+packaging/.publish-mac/
+packaging/app-bundle/
 packaging/deb/usr/lib/view-md/*
 packaging/deb/usr/bin/view-md
 *.user

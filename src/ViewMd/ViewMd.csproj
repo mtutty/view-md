@@ -8,14 +8,19 @@
     <AssemblyName>view-md</AssemblyName>
     <InvariantGlobalization>true</InvariantGlobalization>
 
-    <!-- NativeAOT publish for fast cold start with zero external runtime
-         dependency, see .charter/decisions.md. SelfContained and the RID are
-         deliberately NOT set here: setting SelfContained true unconditionally
-         breaks a plain build or run for any project that references this one
-         non-self-contained (e.g. tools/SmokeTest). Pass the RID and
-         self-contained flag on the publish command line instead (see
-         packaging/build-deb.sh). PublishAot alone is safe to leave here
-         since it only takes effect during an actual publish. -->
+    <!-- SelfContained and the RID are deliberately NOT set unconditionally
+         here: setting SelfContained true project-wide breaks a plain build
+         or run for any project that references this one non-self-contained
+         (e.g. tools/SmokeTest). Pass the RID and self-contained flag on the
+         publish command line instead (see packaging/build-*.sh). -->
+  </PropertyGroup>
+
+  <!-- NativeAOT only for linux-x64, see .charter/decisions.md: Native AOT
+       cannot cross-compile between operating systems (Microsoft Learn,
+       "Cross-compilation - .NET"), so win-x64/osx-arm64 builds produced from
+       this Linux build host are self-contained JIT publishes instead — see
+       packaging/build-windows.sh and packaging/build-macos.sh. -->
+  <PropertyGroup Condition="'$(RuntimeIdentifier)' == 'linux-x64'">
     <PublishAot>true</PublishAot>
   </PropertyGroup>
 

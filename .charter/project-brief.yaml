@@ -77,7 +77,19 @@ infrastructure:
       publish: dotnet-publish-nativeaot-self-contained
       target: linux-x64
       mime-registration: xdg-mime + .desktop entry, wired via deb postinst
-    future-targets: [win-x64, osx-arm64]  # same publish pipeline, lower priority than Ubuntu 24.04
+      script: packaging/build-deb.sh
+    windows:
+      format: zip
+      publish: dotnet-publish-self-contained-jit    # NOT NativeAOT — see decisions.md
+      target: win-x64
+      file-association: packaging/windows/register-file-association.ps1 (per-user, manual, not run automatically)
+      script: packaging/build-windows.sh
+    macos:
+      format: app-bundle-zip
+      publish: dotnet-publish-self-contained-jit    # NOT NativeAOT — see decisions.md
+      target: osx-arm64
+      code-signing: none                            # unsigned; Gatekeeper blocks other machines — see decisions.md
+      script: packaging/build-macos.sh
   ci-cd:
     provider: github-actions
     environments: [release]
