@@ -247,3 +247,33 @@ still meaningfully useful).
 **Consequences:** If public macOS distribution is ever wanted, that's a
 new decision requiring an Apple Developer account and a notarization step
 added to `build-macos.sh` — not a natural extension of the current script.
+
+---
+
+## Jenkins base image: mcr.microsoft.com/dotnet/sdk:10.0-noble-aot — 2026-08-03
+**Decision:** The Jenkinsfile's single docker agent uses Microsoft's
+official `10.0-noble-aot` SDK image (Ubuntu 24.04 "Noble" + `clang`/`llvm`/
+`zlib1g-dev` already installed for NativeAOT), plus `git`, `zip`, and
+`libfontconfig1` installed as a pipeline step.
+**Context:** Checked directly against the image's own Dockerfile in the
+`dotnet/dotnet-docker` repo rather than assuming what it contains. The
+entire pipeline (restore, build, the headless smoke-test stage, and all
+three packaging scripts) was run inside this exact image against this repo
+during development — not just written and assumed correct. That run caught
+a real gap: the base image lacks `libfontconfig1` (a SkiaSharp/Avalonia.Skia
+runtime dependency), which made the headless-render test stage crash with
+`DllNotFoundException` until added. `git` and `zip` aren't part of the base
+image either — `git` because Jenkins' own SCM checkout needs it inside the
+container, `zip` for the Windows/macOS packaging scripts.
+**Rationale:** Using the official AOT-focused image avoids hand-maintaining
+the NativeAOT prerequisite list; the extra three packages are cheap and
+were identified by actually running the pipeline, not guessed.
+**Alternatives considered:** Plain `mcr.microsoft.com/dotnet/sdk:10.0` +
+manually installing `clang`/`llvm`/`zlib1g-dev` (rejected: duplicates what
+the official `-aot` variant already provides, more to maintain for no
+benefit).
+**Consequences:** The image tag `10.0-noble-aot` floats across .NET 10.0.x
+patch releases (not digest-pinned) — acceptable for this project's scale,
+but means the exact base image contents can shift over time. If a future
+CI failure looks environment-related, checking what changed in that image
+tag is the first thing to try.

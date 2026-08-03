@@ -91,9 +91,11 @@ infrastructure:
       code-signing: none                            # unsigned; Gatekeeper blocks other machines — see decisions.md
       script: packaging/build-macos.sh
   ci-cd:
-    provider: github-actions
-    environments: [release]
-    deploy-target: github-releases        # attach built .deb (and later msi/dmg) to GitHub Releases
+    provider: jenkins
+    agent: docker-based, single label (jenkins-fleet-app)
+    base-image: mcr.microsoft.com/dotnet/sdk:10.0-noble-aot   # includes NativeAOT prereqs; verified against its own Dockerfile
+    environments: [ci]
+    deploy-target: none                   # archives dist/* as Jenkins build artifacts; no auto-deploy/release step yet
 
 capabilities:
   markdown-rendering:

@@ -64,7 +64,9 @@ the running app via Help -> About view-md.
 Three platforms, one Linux build host. Only the Linux build is NativeAOT —
 Native AOT cannot cross-compile between operating systems (see
 `.charter/decisions.md`), so the Windows/macOS builds are standard
-self-contained (JIT) publishes cross-compiled from Linux.
+self-contained (JIT) publishes cross-compiled from Linux. All three scripts
+were run and verified inside the exact Jenkins base image during
+development (see `Jenkinsfile`).
 
 ```sh
 ./packaging/build-deb.sh      # Linux, NativeAOT, produces dist/view-md_<version>_amd64.deb
@@ -89,13 +91,23 @@ macOS: unzip and run `view-md.app`. Unsigned — see the comment at the top
 of `build-macos.sh` for what that means and why (no Apple Developer account
 in scope for this project).
 
+## CI
+
+`Jenkinsfile` builds/tests/packages all three platforms on a single
+docker-based agent (`label 'jenkins-fleet-app'`, image
+`mcr.microsoft.com/dotnet/sdk:10.0-noble-aot`). The test stage runs
+`tools/SmokeTest` headlessly as a rendering smoke check — there's no GUI
+test framework here, but this exercises the real rendering code path
+without needing a display, including inside the CI container.
+
 ## Status
 
 Charter complete. Core capabilities implemented and verified: rendering,
 MRU, directory browser, file association/CLI dispatch, auto-reload, search,
 PDF export, theming (OS-follow + override), configurable typography,
-versioning, and packaging for Linux/Windows/macOS. See
+versioning, and packaging for all three desktop platforms. See
 `.charter/decisions.md` for the dependency and platform issues found and
 fixed along the way (an alpha-only Markdown renderer package, a SkiaSharp
-version mismatch, and NativeAOT's cross-OS limitation) — worth reading
-before touching rendering, PDF export, or packaging.
+version mismatch, NativeAOT's cross-OS limitation, a missing runtime
+library in the CI base image) — worth reading before touching rendering,
+PDF export, or packaging.
