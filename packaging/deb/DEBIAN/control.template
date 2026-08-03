@@ -1,5 +1,5 @@
 Package: view-md
-Version: 0.1.0
+Version: __VERSION__
 Section: utils
 Priority: optional
 Architecture: amd64

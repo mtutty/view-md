@@ -9,6 +9,12 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PROJECT="$ROOT_DIR/src/ViewMd/ViewMd.csproj"
 STAGE="$ROOT_DIR/packaging/deb"
 DIST="$ROOT_DIR/dist"
+VERSION="$(cat "$ROOT_DIR/version.txt" | tr -d '[:space:]')"
+
+# DEBIAN/control is generated from control.template each run, not tracked
+# directly — otherwise its Version: field would silently drift from
+# version.txt (the actual source of truth) instead of being derived from it.
+sed "s/__VERSION__/$VERSION/" "$STAGE/DEBIAN/control.template" > "$STAGE/DEBIAN/control"
 
 echo "==> Publishing NativeAOT linux-x64 build..."
 dotnet publish "$PROJECT" -c Release -r linux-x64 --self-contained true -o "$ROOT_DIR/packaging/.publish"
@@ -30,7 +36,6 @@ chmod 644 "$STAGE/usr/share/applications/view-md.desktop"
 
 echo "==> Building .deb..."
 mkdir -p "$DIST"
-VERSION="$(grep '^Version:' "$STAGE/DEBIAN/control" | awk '{print $2}')"
 dpkg-deb --build --root-owner-group "$STAGE" "$DIST/view-md_${VERSION}_amd64.deb"
 
 echo "==> Done: $DIST/view-md_${VERSION}_amd64.deb"
