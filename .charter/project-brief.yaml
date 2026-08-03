@@ -1,0 +1,142 @@
+charter: 1.0
+generated: 2026-08-03T00:00:00Z
+charter-framework-note: >
+  This project does NOT use the standard Charter web-SaaS reference data
+  (stacks.md / libraries.md / capabilities/*.md from the Charter framework
+  repo). That data covers Node/Python/PHP web stacks with capabilities like
+  auth, billing, and multi-tenancy — none of which apply to a local,
+  single-user native desktop app. This charter was hand-authored to follow
+  Charter's *structure* (project-brief, capability docs, integrations,
+  decisions log) without forcing SaaS vocabulary onto a desktop app. See
+  decisions.md for the record of this choice.
+
+app:
+  name: view-md
+  description: >
+    A lightweight, fast-starting native Markdown viewer for Linux desktops
+    (primary target: Ubuntu 24.04), intended to be set as the default file
+    association for .md files. Renders CommonMark/GFM-ish Markdown, keeps a
+    most-recently-used list of files and folders, and can browse a whole
+    directory of Markdown files via a sidebar tree. Built to replace existing
+    Linux Markdown viewers that either fail to install cleanly via apt/snap,
+    fail to run (commonly due to WebKitGTK version mismatches in
+    Electron/webview-based tools), or run too slowly for a "double-click and
+    read" workflow.
+  market: developer
+  business-model: free
+  stage: mvp
+  domain-context: >
+    Single-user, offline, no backend, no accounts, no persistence beyond
+    local config files. The core UX goal is startup latency low enough that
+    launching the app to read a file feels indistinguishable from opening a
+    text file — this drives every architectural choice below (native
+    rendering over webview, NativeAOT over JIT, no background services).
+    The user is a developer who wants this to feel like `less` or `bat` for
+    Markdown: instant, keyboard-friendly, no chrome.
+
+stack:
+  language: csharp
+  runtime: dotnet-9-nativeaot
+  ui-framework: avalonia-ui-11
+  markdown-parser: markdig
+  markdown-renderer: markdown.avalonia   # verify still maintained at generation time; fallback is a thin custom Markdig->Avalonia visual-tree renderer
+  pdf-export: skiasharp-skdocument       # reuses Avalonia's existing SkiaSharp dependency, no new native lib
+  config-storage: local-json             # ~/.config/view-md/
+  package-manager: nuget/dotnet-cli
+  note: >
+    No entry in Charter's stacks.md/libraries.md fits a native desktop app;
+    this stack was chosen directly rather than selected from the registry.
+
+infrastructure:
+  scalability:
+    model: single-process-desktop
+    horizontal: false
+  secrets:
+    provider: none                        # no secrets in this app
+  migrations:
+    strategy: none                        # no database
+  caching:
+    provider: in-memory                   # parsed-document cache only, per open file
+  background-jobs:
+    transport: in-process                 # FileSystemWatcher callback, nothing durable needed
+  real-time-transport:
+    enabled: false
+  observability:
+    logging:
+      format: plain-text
+      level: warn                         # desktop app; avoid noisy stdout by default
+    error-tracking: none
+    apm: none
+    health-checks: false
+  containerization:
+    enabled: false                        # not applicable to a desktop app
+  packaging:
+    linux:
+      format: deb
+      publish: dotnet-publish-nativeaot-self-contained
+      target: linux-x64
+      mime-registration: xdg-mime + .desktop entry, wired via deb postinst
+    future-targets: [win-x64, osx-arm64]  # same publish pipeline, lower priority than Ubuntu 24.04
+  ci-cd:
+    provider: github-actions
+    environments: [release]
+    deploy-target: github-releases        # attach built .deb (and later msi/dmg) to GitHub Releases
+
+capabilities:
+  markdown-rendering:
+    engine: markdig
+    renderer: markdown.avalonia
+    context: >
+      Core capability. Native rendering chosen over a webview specifically
+      to avoid the WebKitGTK dependency failures the user has hit with other
+      Linux Markdown viewers.
+
+  mru-list:
+    max-entries: 15
+    tracks: [files, folders]
+    storage: ~/.config/view-md/mru.json
+    context: >
+      Both recently opened files and recently opened folders are tracked
+      separately in the same menu, since folder-mode (directory browsing) is
+      a first-class entry point, not just a fallback.
+
+  directory-browser:
+    mode: sidebar-tree
+    scope: recursive
+    context: >
+      Chosen over a flat file list so nested docs folders/wikis render
+      correctly. Sidebar is collapsible and remembers its open/closed state
+      and width per session.
+
+  file-association:
+    trigger: cli-argument
+    accepts: [file, directory]
+    context: >
+      This is the primary use case driving the whole project — the app must
+      be invocable as `view-md <path>` from the desktop file-association
+      mechanism (xdg-mime/.desktop) with startup latency low enough to feel
+      instant.
+
+  auto-reload:
+    mechanism: filesystemwatcher
+    scope: currently-open-file-or-folder
+    context: >
+      Cheap to add given FileSystemWatcher is already idiomatic .NET; useful
+      when editing the file in another tool while previewing in view-md.
+
+  search-in-file:
+    scope: currently-rendered-document
+    ui: inline-highlight-with-next-prev
+    context: >
+      Added per explicit request during charter init. Operates on the
+      rendered document (like browser find-in-page), not a full-text index
+      across the directory — that's out of scope for v1.
+
+  export-to-pdf:
+    mechanism: skiasharp-skdocument
+    context: >
+      Added per explicit request during charter init. Renders the currently
+      open document's visual tree to a PDF via SkiaSharp's SKDocument PDF
+      canvas, reusing Avalonia's existing Skia dependency rather than
+      pulling in a separate PDF library (e.g. no wkhtmltopdf/Puppeteer,
+      which would reintroduce heavy/webview-adjacent dependencies).

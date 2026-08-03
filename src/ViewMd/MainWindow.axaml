@@ -1,0 +1,60 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="700"
+        x:Class="ViewMd.MainWindow"
+        Title="view-md">
+    <DockPanel>
+        <Menu DockPanel.Dock="Top">
+            <MenuItem Header="_File">
+                <MenuItem Header="_Open File..." Click="OnOpenFileClick" InputGesture="Ctrl+O" />
+                <MenuItem Header="Open _Folder..." Click="OnOpenFolderClick" InputGesture="Ctrl+Shift+O" />
+                <Separator />
+                <MenuItem Header="Recent _Files" Name="RecentFilesMenu" />
+                <MenuItem Header="Recent F_olders" Name="RecentFoldersMenu" />
+                <Separator />
+                <MenuItem Header="_Export to PDF..." Click="OnExportPdfClick" Name="ExportPdfMenuItem" IsEnabled="False" />
+                <MenuItem Header="_Reveal in Sidebar" Click="OnRevealInSidebarClick" Name="RevealMenuItem" IsEnabled="False" />
+                <Separator />
+                <MenuItem Header="E_xit" Click="OnExitClick" />
+            </MenuItem>
+            <MenuItem Header="_View">
+                <MenuItem Header="Toggle _Sidebar" Click="OnToggleSidebarClick" InputGesture="Ctrl+B" />
+            </MenuItem>
+            <MenuItem Header="_Edit">
+                <MenuItem Header="_Find..." Click="OnFindClick" InputGesture="Ctrl+F" />
+            </MenuItem>
+        </Menu>
+
+        <Grid Name="BodyGrid">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="260" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <Border Name="SidebarPanel" Grid.Column="0" BorderBrush="Gray" BorderThickness="0,0,1,0" Opacity="0.95">
+                <TreeView Name="SidebarTreeView" SelectionChanged="OnSidebarSelectionChanged" />
+            </Border>
+
+            <GridSplitter Name="SidebarSplitter" Grid.Column="1" Width="4" ResizeDirection="Columns" Background="Transparent" />
+
+            <DockPanel Grid.Column="2">
+                <Border Name="SearchBarPanel" DockPanel.Dock="Top" IsVisible="False" Padding="8" Background="#22808080">
+                    <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto">
+                        <TextBox Name="SearchBox" Grid.Column="0" PlaceholderText="Find in document..." TextChanged="OnSearchTextChanged" KeyDown="OnSearchBoxKeyDown" />
+                        <TextBlock Name="SearchMatchCountText" Grid.Column="1" VerticalAlignment="Center" Margin="8,0" MinWidth="60" />
+                        <Button Name="SearchPrevButton" Grid.Column="2" Content="▲" Click="OnSearchPrevClick" Margin="2,0" />
+                        <Button Name="SearchNextButton" Grid.Column="3" Content="▼" Click="OnSearchNextClick" Margin="2,0" />
+                        <Button Name="SearchCloseButton" Grid.Column="4" Content="✕" Click="OnSearchCloseClick" Margin="2,0" />
+                    </Grid>
+                </Border>
+
+                <ScrollViewer Name="ContentScrollViewer">
+                    <ContentControl Name="DocumentHost" HorizontalContentAlignment="Stretch" />
+                </ScrollViewer>
+            </DockPanel>
+        </Grid>
+    </DockPanel>
+</Window>

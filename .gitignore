@@ -1,0 +1,14 @@
+bin/
+obj/
+dist/
+packaging/.publish/
+packaging/deb/usr/lib/view-md/*
+packaging/deb/usr/bin/view-md
+*.user
+*.dbg
+
+# Editor/tool local state, not project source
+.claude/
+.vs/
+.vscode/
+.idea/

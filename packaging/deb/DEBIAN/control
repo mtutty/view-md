@@ -1,0 +1,13 @@
+Package: view-md
+Version: 0.1.0
+Section: utils
+Priority: optional
+Architecture: amd64
+Depends: libc6 (>= 2.34), libfontconfig1, libfreetype6, libx11-6
+Maintainer: Michael Tutty <mtutty@gforgegroup.com>
+Description: Fast, lightweight native Markdown viewer
+ view-md is a self-contained, NativeAOT-compiled Markdown viewer built for
+ instant startup as the default handler for .md files. Renders Markdown
+ natively (no webview/Electron dependency), keeps a most-recently-used
+ list, and can browse a whole directory of Markdown files via a sidebar
+ tree.

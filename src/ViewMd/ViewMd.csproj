@@ -1,0 +1,37 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <AssemblyName>view-md</AssemblyName>
+    <InvariantGlobalization>true</InvariantGlobalization>
+
+    <!-- NativeAOT publish for fast cold start with zero external runtime
+         dependency, see .charter/decisions.md. SelfContained and the RID are
+         deliberately NOT set here: setting SelfContained true unconditionally
+         breaks a plain build or run for any project that references this one
+         non-self-contained (e.g. tools/SmokeTest). Pass the RID and
+         self-contained flag on the publish command line instead (see
+         packaging/build-deb.sh). PublishAot alone is safe to leave here
+         since it only takes effect during an actual publish. -->
+    <PublishAot>true</PublishAot>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia" Version="12.1.1" />
+    <PackageReference Include="Avalonia.Desktop" Version="12.1.1" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.1" />
+    <PackageReference Include="Avalonia.Fonts.Inter" Version="12.1.1" />
+    <PackageReference Include="AvaloniaUI.DiagnosticsSupport" Version="2.2.3">
+      <IncludeAssets Condition="'$(Configuration)' != 'Debug'">None</IncludeAssets>
+      <PrivateAssets Condition="'$(Configuration)' != 'Debug'">All</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Markdig" Version="1.3.2" />
+    <!-- Pinned to exactly match Avalonia.Skia's own SkiaSharp dependency (see
+         .charter/decisions.md) — letting this float independently causes a managed/
+         native version mismatch at runtime (TypeInitializationException). -->
+    <PackageReference Include="SkiaSharp" Version="3.119.4" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=view-md
+Comment=Fast, lightweight Markdown viewer
+Exec=view-md %f
+Terminal=false
+Categories=Office;Viewer;TextTools;
+MimeType=text/markdown;text/x-markdown;
+NoDisplay=false
+StartupNotify=true
