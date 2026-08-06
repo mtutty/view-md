@@ -30,10 +30,25 @@ capability the whole app exists to deliver quickly.
   file change.
 
 ## Post-generation customizations
-(empty at init)
+- **Image display** (`![alt](url)`) supports relative paths, `file://`, and
+  `http(s)://` (fetched synchronously, 5s timeout). A standalone image (alone
+  in its own paragraph — the common case) renders as a real picture; an
+  image mixed inline with other text renders as a clickable `[image: alt]`
+  text link instead, opening the image externally on click — see decisions.md
+  ("Image display: standalone vs. inline images render through different
+  paths") for why those two cases are handled differently.
 
 ## Known limitations and future considerations
-No Mermaid/LaTeX support in v1 given the native-rendering choice. If that
-becomes a hard requirement later, it's a stack-level decision (would mean
-reconsidering the webview approach), not a small addition — log it as a new
-decision in decisions.md rather than bolting on a partial fix.
+- No Mermaid/LaTeX support in v1 given the native-rendering choice. If that
+  becomes a hard requirement later, it's a stack-level decision (would mean
+  reconsidering the webview approach), not a small addition — log it as a new
+  decision in decisions.md rather than bolting on a partial fix.
+- An image genuinely inline with other text in the same paragraph cannot
+  currently be shown as an actual picture — embedding a real `Image` control
+  inside a `TextBlock` (via `InlineUIContainer`) blanks the whole line,
+  image and surrounding text alike, for anything but a trivial 1x1 source.
+  This is a pre-existing Avalonia 12.1.1 rendering limitation, not specific
+  to any one image source — see decisions.md for what was already ruled out
+  before landing on the text-link fallback. Fixing it "properly" would need
+  to establish why `TextBlock` can't safely host a real embedded image,
+  which is a deeper investigation than a small addition.

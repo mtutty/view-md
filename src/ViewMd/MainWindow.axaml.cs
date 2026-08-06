@@ -5,6 +5,7 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
 using Avalonia.Styling;
+using Avalonia.Threading;
 using ViewMd.Models;
 using ViewMd.Rendering;
 using ViewMd.Services;
@@ -19,6 +20,7 @@ public partial class MainWindow : Window
     private readonly DocumentSearch _search;
 
     private Control? _currentDocumentRoot;
+    private IReadOnlyDictionary<string, Control>? _currentAnchors;
     private string? _currentFilePath;
     private string? _currentFolderPath;
     private bool _sidebarVisible = true;
@@ -105,6 +107,7 @@ public partial class MainWindow : Window
 
         DocumentHost.Content = rendered;
         _currentDocumentRoot = rendered;
+        _currentAnchors = renderer.Anchors;
         _currentFilePath = path;
         Title = $"{Path.GetFileName(path)} — view-md";
         ExportPdfMenuItem.IsEnabled = true;
@@ -183,14 +186,32 @@ public partial class MainWindow : Window
             return;
         }
 
-        var isExternal = Uri.TryCreate(url, UriKind.Absolute, out var uri) && uri.Scheme is "http" or "https" or "mailto";
+        // Split off a "#heading-slug" fragment (Markdig's AutoIdentifier format) before
+        // any file resolution — otherwise it's treated as part of the filename and, for
+        // a same-page link like "#some-heading", the path part is empty and File.Exists
+        // always fails, falling through to Process.Start on a literal "#..." string.
+        var hashIndex = url.IndexOf('#');
+        var pathPart = hashIndex >= 0 ? url[..hashIndex] : url;
+        var fragment = hashIndex >= 0 ? Uri.UnescapeDataString(url[(hashIndex + 1)..]) : null;
+
+        if (pathPart.Length == 0)
+        {
+            if (fragment is not null)
+            {
+                ScrollToAnchor(fragment);
+            }
+
+            return;
+        }
+
+        var isExternal = Uri.TryCreate(pathPart, UriKind.Absolute, out var uri) && uri.Scheme is "http" or "https" or "mailto";
 
         if (!isExternal)
         {
             var baseDir = _currentFilePath is not null ? Path.GetDirectoryName(_currentFilePath) : _currentFolderPath;
             if (baseDir is not null)
             {
-                var candidate = Path.GetFullPath(Path.Combine(baseDir, url));
+                var candidate = Path.GetFullPath(Path.Combine(baseDir, pathPart));
                 if (File.Exists(candidate))
                 {
                     var ext = Path.GetExtension(candidate);
@@ -198,6 +219,15 @@ public partial class MainWindow : Window
                         string.Equals(ext, ".markdown", StringComparison.OrdinalIgnoreCase))
                     {
                         OpenFile(candidate);
+                        if (fragment is not null)
+                        {
+                            // The new document's headings aren't laid out yet right after
+                            // OpenFile (DocumentHost.Content assignment only queues a
+                            // layout pass, it doesn't run one synchronously), so
+                            // TransformToVisual would see stale/zero bounds if called
+                            // immediately. Defer until after that layout pass completes.
+                            Dispatcher.UIThread.Post(() => ScrollToAnchor(fragment), DispatcherPriority.Loaded);
+                        }
                     }
                     else
                     {
@@ -210,6 +240,14 @@ public partial class MainWindow : Window
         }
 
         OpenExternally(url);
+    }
+
+    private void ScrollToAnchor(string anchorId)
+    {
+        if (_currentAnchors is not null && _currentAnchors.TryGetValue(anchorId, out var control))
+        {
+            ScrollToMatch(control as TextBlock);
+        }
     }
 
     private static void OpenExternally(string target)

@@ -277,3 +277,62 @@ patch releases (not digest-pinned) — acceptable for this project's scale,
 but means the exact base image contents can shift over time. If a future
 CI failure looks environment-related, checking what changed in that image
 tag is the first thing to try.
+
+---
+
+## Image display: standalone vs. inline images render through different paths — 2026-08-06
+**Decision:** `MarkdownRenderer` renders `![alt](url)` differently depending
+on whether the image is the *only* content of its paragraph or mixed in with
+other text. A standalone image (the common case — an image alone on its own
+line) is rendered as a real block-level `Image` control, sibling to
+headings/paragraphs in the root `StackPanel`. An image genuinely inline with
+other text (e.g. `text ![icon](url) more text`) is rendered instead as a
+plain clickable `[image: alt]` text link — the same in-flow `Span`
+mechanism links already use — that opens the image externally when clicked,
+rather than as an embedded picture. Separately, `http(s)://` images are now
+actually fetched (superseding the "no network fetch in v1" placeholder from
+the markdown-rendering capability doc), synchronously, via a `HttpClient`
+with a 5s timeout, on top of already-supported relative paths and newly
+added `file://` URL support.
+**Context:** Verified empirically (headless smoke-test renders, and
+confirmed against the real windowed app, not just headless) that embedding
+a real `Image` control inline inside a `TextBlock` via `InlineUIContainer`
+is unsafe in Avalonia 12.1.1 for anything but a trivial (e.g. 1x1 solid
+color) source: a normal-sized image (tested with a 288x288 PNG) blows up
+the line box and silently blanks the entire line — the image *and* any
+surrounding text — with no exception thrown. This reproduces for local
+files too, so it's unrelated to network/async timing. A separate attempt at
+async-fetching remote images and patching the already-rendered `TextBlock`
+in place once the download completed (swapping the embedded control's
+`Child`, mutating its properties, calling `TextBlock.InvalidateMeasure()`,
+and replacing the slot in the owning `InlineCollection` via its indexer)
+was also tried and also failed the same way — a `TextBlock`'s `TextLayout`
+does not appear to be safely updatable piecemeal after initial layout, for
+any of those mechanisms tried.
+**Rationale:** The standalone case is both the overwhelmingly common
+real-world pattern (matches the user's own example verbatim) and trivially
+safe to fix — render it as a normal block-level control the same way
+`RenderCodeBlock`/`RenderTable` already do, entirely avoiding
+`InlineUIContainer`. The inline case is a much deeper, pre-existing
+rendering limitation (not something newly introduced by adding `file://`/
+`http(s)://` support — it already applied to a real *local* inline image);
+degrading it to a text link keeps documents readable and images reachable
+(click to open externally) without chasing what would likely be a
+significant restructuring of how mixed-content paragraphs render.
+**Alternatives considered:** Capping the inline image's `MaxHeight` to
+roughly a line's height (tried first) — fixed the line-box blowup but not
+the separate finding that *any* real inline image (even correctly sized)
+still blanks its surrounding text; async fetch-then-patch for remote images
+(tried, see Context) — added real complexity for a bug that turned out to
+be about image size/embedding, not timing, and was abandoned once that
+became clear; doing nothing for `http(s)://` (keeping the old placeholder
+text) — rejected because displaying the image is the actual ask.
+**Consequences:** A future fix for genuinely-inline images (if ever
+prioritized) needs to establish *why* `TextBlock` can't safely host a
+real embedded `Image`, not just retry the same mutation-after-layout shapes
+already ruled out here. `markdown-rendering.md`'s known-limitations section
+should be updated to reflect this. `http(s)://` images add a per-document
+open-time cost bounded by (number of remote images) × 5s in the worst case
+(all unreachable) — acceptable for the common case of zero-to-few remote
+images, but a document with many would open slowly; revisit with concurrent
+prefetching if that ever becomes a real complaint.
