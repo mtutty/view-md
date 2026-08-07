@@ -142,9 +142,19 @@ public partial class MainWindow : Window
         }
     }
 
-    private void OpenFolder(string path, bool recordMru = true)
+    // unloadDocument is false only for the "Reveal in Sidebar" path, which opens
+    // the current file's parent folder specifically to keep showing that file
+    // alongside it in the tree -- every other entry point (Open Folder, CLI arg,
+    // MRU) is a context switch and should clear whatever was on screen. See
+    // .charter/capabilities/directory-browser.md.
+    private void OpenFolder(string path, bool recordMru = true, bool unloadDocument = true)
     {
         _currentFolderPath = path;
+        if (unloadDocument)
+        {
+            UnloadDocument();
+        }
+
         RefreshTree(path);
         SetSidebarVisible(true);
         _watcher.WatchFolder(path, _currentFilePath);
@@ -153,6 +163,22 @@ public partial class MainWindow : Window
         {
             _mru.RecordFolder(path);
             RefreshRecentMenus();
+        }
+    }
+
+    private void UnloadDocument()
+    {
+        _currentFilePath = null;
+        _currentAnchors = null;
+        Title = "view-md";
+        ExportPdfMenuItem.IsEnabled = false;
+        RevealMenuItem.IsEnabled = false;
+        ShowEmptyState();
+
+        if (SearchBarPanel.IsVisible)
+        {
+            _search.Reset(DocumentHost, string.Empty);
+            UpdateMatchCountText();
         }
     }
 
@@ -497,7 +523,7 @@ public partial class MainWindow : Window
         var parent = Path.GetDirectoryName(_currentFilePath);
         if (parent is not null)
         {
-            OpenFolder(parent, recordMru: false);
+            OpenFolder(parent, recordMru: false, unloadDocument: false);
         }
     }
 

@@ -20,6 +20,16 @@ to the sidebar tree first. This dispatch is the core of the "double-click a
 **Why:** Browsing and rendering are separate concerns; the tree just tells
 the main pane what to display next.
 
+## directory-browser → markdown-rendering (unload)
+**Trigger:** A folder is opened as a root (Open Folder, CLI arg, or MRU) while
+a document is already displayed.
+**Payload:** none (clears the main pane back to the empty state).
+**Why:** Opening a folder is a context switch — leaving the previous
+document on screen while the sidebar now shows an unrelated tree read as a
+stale/disconnected UI. The one exception is "Reveal in Sidebar", which opens
+the current file's own parent folder specifically to keep showing that file
+alongside it in the tree, so it opts out of this unload.
+
 ## directory-browser → mru-list
 **Trigger:** A folder is opened as a root (not individual file selections
 within an already-open folder).
