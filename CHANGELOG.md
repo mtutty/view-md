@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 This project follows [Semantic Versioning](https://semver.org/) once it
 reaches 1.0; before that, minor version bumps mark feature additions.
 
+## [0.4.0] - 2026-08-07
+
+### Added
+- Empty-state CTA: when no document is displayed, the main pane now shows a
+  centered prompt with the app icon, "No document open", and a contextual
+  instruction (open a file/folder, or select one from the sidebar if a
+  folder is already open) instead of a plain sentence of text.
+- The app icon now also appears in the Help -> About dialog.
+
+### Changed
+- Opening a folder (Open Folder, CLI arg, or MRU) now unloads whatever
+  document was on screen, since the sidebar switching to an unrelated tree
+  while the old document stayed put read as stale. "Reveal in Sidebar" is
+  the one exception — it keeps the current file open, since revealing it
+  alongside itself in the tree is the whole point.
+
 ## [0.3.0] - 2026-08-07
 
 ### Added
