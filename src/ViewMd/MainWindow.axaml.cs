@@ -120,6 +120,14 @@ public partial class MainWindow : Window
         else
         {
             _watcher.WatchFile(path);
+
+            // No folder is open (or this file isn't inside the one that is) --
+            // there's nothing for the sidebar to meaningfully show, so hide it
+            // rather than leave an empty/stale tree visible. See
+            // .charter/capabilities/directory-browser.md.
+            _currentFolderPath = null;
+            SidebarTreeView.ItemsSource = null;
+            SetSidebarVisible(false);
         }
 
         if (recordMru)
@@ -607,7 +615,10 @@ public partial class MainWindow : Window
         _settings.Current.WindowHeight = Height;
         _settings.Current.SidebarVisible = _sidebarVisible;
         var sidebarWidth = BodyGrid.ColumnDefinitions[0].Width;
-        if (sidebarWidth.IsAbsolute)
+        // Only capture the width while the sidebar is actually visible -- when
+        // hidden, the column is collapsed to GridLength(0), which would
+        // otherwise overwrite the user's remembered width with 0.
+        if (_sidebarVisible && sidebarWidth.IsAbsolute && sidebarWidth.Value > 0)
         {
             _settings.Current.SidebarWidth = sidebarWidth.Value;
         }

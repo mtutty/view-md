@@ -15,6 +15,11 @@ folder context — this is the "browse a whole docs folder/wiki" use case.
 - Opening a single file (not a folder) still allows revealing it in the
   sidebar, scoped to its parent directory, via a "reveal in folder" action —
   so single-file and folder mode aren't fully disconnected.
+- Opening a file with no folder open (or a file outside the currently
+  browsed folder) auto-hides the sidebar rather than leaving an empty/stale
+  tree showing — the sidebar is only meaningful in folder-browsing mode.
+  Manual toggle (Ctrl+B / View -> Toggle Sidebar) still works regardless of
+  mode; this only affects the automatic default.
 
 ## Integration points
 - Selecting a node feeds **markdown-rendering** for the main pane.
