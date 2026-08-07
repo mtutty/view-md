@@ -462,8 +462,42 @@ public partial class MainWindow : Window
         _ = dialog.ShowDialog(this);
     }
 
-    private void OnAboutClick(object? sender, RoutedEventArgs e) =>
-        ShowMessage("About view-md", $"view-md {VersionInfo.InformationalVersion}\n\nA lightweight, fast-starting native Markdown viewer.");
+    private void OnAboutClick(object? sender, RoutedEventArgs e)
+    {
+        var okButton = new Button { Content = "OK", Width = 80, HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center };
+        var dialog = new Window
+        {
+            Title = "About view-md",
+            Width = 420,
+            SizeToContent = SizeToContent.Height,
+            CanResize = false,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            Content = new StackPanel
+            {
+                Margin = new Thickness(16),
+                Spacing = 12,
+                Children =
+                {
+                    new Image
+                    {
+                        Source = AppIconBitmap,
+                        Width = 64,
+                        Height = 64,
+                        HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+                    },
+                    new TextBlock
+                    {
+                        Text = $"view-md {VersionInfo.InformationalVersion}\n\nA lightweight, fast-starting native Markdown viewer.",
+                        TextWrapping = Avalonia.Media.TextWrapping.Wrap,
+                        TextAlignment = Avalonia.Media.TextAlignment.Center,
+                    },
+                    okButton,
+                },
+            },
+        };
+        okButton.Click += (_, _) => dialog.Close();
+        _ = dialog.ShowDialog(this);
+    }
 
     // --- Search ---
 
