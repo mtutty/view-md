@@ -7,7 +7,7 @@
         Icon="/Assets/app-icon.png"
         Title="view-md">
     <DockPanel>
-        <Menu DockPanel.Dock="Top">
+        <Menu Name="MainMenu" DockPanel.Dock="Top">
             <MenuItem Header="_File">
                 <MenuItem Header="_Open File..." Click="OnOpenFileClick" InputGesture="Ctrl+O" />
                 <MenuItem Header="Open _Folder..." Click="OnOpenFolderClick" InputGesture="Ctrl+Shift+O" />

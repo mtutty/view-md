@@ -352,7 +352,11 @@ public partial class MainWindow : Window
         foreach (var entry in entries)
         {
             var item = new MenuItem { Header = entry.Path };
-            item.Click += (_, _) => OpenPath(entry.Path);
+            item.Click += (_, _) =>
+            {
+                OpenPath(entry.Path);
+                MainMenu.Close();
+            };
             parent.Items.Add(item);
         }
     }
