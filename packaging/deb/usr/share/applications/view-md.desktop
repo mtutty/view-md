@@ -3,6 +3,7 @@ Type=Application
 Name=view-md
 Comment=Fast, lightweight Markdown viewer
 Exec=view-md %f
+Icon=view-md
 Terminal=false
 Categories=Office;Viewer;TextTools;
 MimeType=text/markdown;text/x-markdown;

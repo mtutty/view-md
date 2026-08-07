@@ -24,6 +24,18 @@
     <PublishAot>true</PublishAot>
   </PropertyGroup>
 
+  <!-- Stamps the app icon into the .exe itself on Windows (Explorer, taskbar
+       before the window even opens). Scoped to win-x64 the same way
+       PublishAot is scoped to linux-x64 above, since it's only relevant for
+       that RID, and .NET's cross-platform Win32-resource writer only has
+       something to do there. macOS's equivalent (Info.plist CFBundleIconFile
+       + .icns) and Linux's (.desktop Icon= + hicolor theme) are wired in
+       packaging/, not here; the in-app titlebar/taskbar icon for all three
+       platforms is set via Window.Icon in MainWindow.axaml instead. -->
+  <PropertyGroup Condition="'$(RuntimeIdentifier)' == 'win-x64'">
+    <ApplicationIcon>$(MSBuildThisFileDirectory)../../packaging/windows/app-icon.ico</ApplicationIcon>
+  </PropertyGroup>
+
   <!-- Versioning: base version comes from /version.txt (source of truth, see
        .charter/decisions.md), git short hash is appended so a build can be
        traced back to the exact commit. CI passes -p:GitHashOverride=... (from
@@ -80,6 +92,10 @@
       <Compile Include="$(IntermediateOutputPath)VersionInfo.g.cs" />
     </ItemGroup>
   </Target>
+
+  <ItemGroup>
+    <AvaloniaResource Include="Assets\**" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Avalonia" Version="12.1.1" />

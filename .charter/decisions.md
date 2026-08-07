@@ -336,3 +336,44 @@ open-time cost bounded by (number of remote images) × 5s in the worst case
 (all unreachable) — acceptable for the common case of zero-to-few remote
 images, but a document with many would open slowly; revisit with concurrent
 prefetching if that ever becomes a real complaint.
+
+---
+
+## App icon wired from a single 1024px master, hand-assembled per platform — 2026-08-07
+**Decision:** The developer supplied one master icon,
+`src/ViewMd/Assets/app-icon.png` (originally 1024x1024, downsized to 256px
+in place once all derivatives below were generated from the 1024px source).
+All platform-specific icon assets were generated from it in a one-off local
+pass with Python/Pillow and committed as static files, rather than added to
+the build pipeline: `packaging/windows/app-icon.ico` (multi-resolution,
+`<ApplicationIcon>`, scoped to the `win-x64` RID in `ViewMd.csproj`),
+`packaging/macos/app-icon.icns` (referenced via `CFBundleIconFile` in
+`Info.plist`, copied into the `.app` bundle by `build-macos.sh`), and a
+freedesktop.org hicolor icon theme tree under
+`packaging/deb/usr/share/icons/hicolor/{size}/apps/view-md.png` (referenced
+via `Icon=view-md` in the `.desktop` file; `postinst`/`postrm` now also run
+`gtk-update-icon-cache`). Separately, `MainWindow.axaml` sets `Window.Icon`
+to the embedded 256px copy for the in-app titlebar/taskbar icon on all three
+platforms.
+**Context:** The app had no icon at all — every packaging target
+(`.desktop`, `Info.plist`, the Windows exe) was missing an `Icon=`/icon
+reference entirely, and the window itself used Avalonia's default.
+**Rationale:** Pillow can write both `.ico` (PNG-compressed frames) and
+`.icns` (Apple's PNG-backed chunk types) directly from a single high-res
+source with no OS-specific tool (`icotool`, `iconutil`, `png2icns`) needed —
+verified by actually generating and file-type-checking both outputs. Doing
+this as a one-off script rather than an MSBuild/Jenkins step avoids adding
+Pillow as a CI dependency for something that only needs to run again if the
+source artwork itself changes.
+**Alternatives considered:** Generating icons at publish time via an MSBuild
+target calling out to a conversion tool — rejected as unnecessary ongoing
+build complexity for an asset that changes rarely, and none of the
+lightweight CLI converters (rsvg-convert, ImageMagick, icotool) were even
+installed in the dev environment, whereas Pillow was already available and
+sufficient.
+**Consequences:** If the source artwork is ever replaced, someone needs to
+re-run the same Pillow-based generation (not documented as a repo script,
+just the process above) rather than it happening automatically from a
+checked-in master — regenerating means redoing this by hand or writing a
+small script under `packaging/` if it recurs often enough to be worth
+automating.

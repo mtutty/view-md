@@ -16,6 +16,8 @@
     <string>APPL</string>
     <key>CFBundleExecutable</key>
     <string>view-md</string>
+    <key>CFBundleIconFile</key>
+    <string>app-icon</string>
     <key>CFBundleDocumentTypes</key>
     <array>
         <dict>

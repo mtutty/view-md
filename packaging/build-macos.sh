@@ -29,6 +29,7 @@ echo "==> Assembling view-md.app bundle..."
 rm -rf "$APP_DIR"
 mkdir -p "$APP_DIR/Contents/MacOS" "$APP_DIR/Contents/Resources"
 cp -R "$PUBLISH_DIR"/. "$APP_DIR/Contents/MacOS/"
+cp "$ROOT_DIR/packaging/macos/app-icon.icns" "$APP_DIR/Contents/Resources/app-icon.icns"
 sed "s/__VERSION__/$VERSION/" "$ROOT_DIR/packaging/macos/Info.plist" > "$APP_DIR/Contents/Info.plist"
 
 echo "==> Zipping..."
