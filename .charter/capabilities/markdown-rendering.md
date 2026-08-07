@@ -30,6 +30,13 @@ capability the whole app exists to deliver quickly.
   file change.
 
 ## Post-generation customizations
+- **Empty-state CTA**: when no document is displayed (startup with no CLI
+  arg, or after unloading a document — see directory-browser.md), the main
+  pane shows a centered prompt (muted app icon, "No document open", and an
+  instruction line) instead of a plain sentence of text. The instruction
+  adapts to context: "open a file/folder" when nothing is open, or "select a
+  file from the sidebar" when a folder is already open and the sidebar has
+  something to pick from.
 - **Image display** (`![alt](url)`) supports relative paths, `file://`, and
   `http(s)://` (fetched synchronously, 5s timeout). A standalone image (alone
   in its own paragraph — the common case) renders as a real picture; an

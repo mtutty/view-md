@@ -3,6 +3,8 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Media.Imaging;
+using Avalonia.Platform;
 using Avalonia.Platform.Storage;
 using Avalonia.Styling;
 using Avalonia.Threading;
@@ -14,6 +16,16 @@ namespace ViewMd;
 
 public partial class MainWindow : Window
 {
+    // Shared by the empty-state CTA and the About dialog -- loaded once
+    // rather than per-call since neither is on a hot path but both would
+    // otherwise re-decode the same PNG repeatedly.
+    // Authority must be the assembly's simple name ("view-md", set via
+    // <AssemblyName> in ViewMd.csproj) -- not the C# project/namespace name
+    // ("ViewMd") that MainWindow.axaml's own Icon="/Assets/..." shorthand
+    // gets away with implicitly, since that's resolved at compile time
+    // against the containing assembly rather than by authority lookup.
+    private static readonly Bitmap AppIconBitmap = new(AssetLoader.Open(new Uri("avares://view-md/Assets/app-icon.png")));
+
     private readonly MruService _mru;
     private readonly SettingsService _settings;
     private readonly DocumentWatcher _watcher;
@@ -204,11 +216,51 @@ public partial class MainWindow : Window
 
     private void ShowEmptyState()
     {
-        DocumentHost.Content = new TextBlock
+        // A folder is already open (sidebar showing a tree) -> point at it
+        // instead of repeating the same "open a folder" instruction.
+        var subtitle = _currentFolderPath is not null
+            ? "Select a file from the sidebar, or press Ctrl+O to open a different one."
+            : "Open a file (Ctrl+O) or a folder (Ctrl+Shift+O) to get started.";
+
+        DocumentHost.Content = new Grid
         {
-            Text = "Open a Markdown file (Ctrl+O) or a folder (Ctrl+Shift+O) to get started.",
-            Margin = new Thickness(20),
-            Opacity = 0.6,
+            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch,
+            VerticalAlignment = Avalonia.Layout.VerticalAlignment.Stretch,
+            Children =
+            {
+                new StackPanel
+                {
+                    HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+                    VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+                    Spacing = 12,
+                    Children =
+                    {
+                        new Image
+                        {
+                            Source = AppIconBitmap,
+                            Width = 96,
+                            Height = 96,
+                            Opacity = 0.5,
+                            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+                        },
+                        new TextBlock
+                        {
+                            Text = "No document open",
+                            FontSize = 18,
+                            FontWeight = Avalonia.Media.FontWeight.SemiBold,
+                            Opacity = 0.8,
+                            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+                        },
+                        new TextBlock
+                        {
+                            Text = subtitle,
+                            Opacity = 0.6,
+                            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+                            TextAlignment = Avalonia.Media.TextAlignment.Center,
+                        },
+                    },
+                },
+            },
         };
         _currentDocumentRoot = null;
     }
