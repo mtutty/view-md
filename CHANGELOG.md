@@ -6,6 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 This project follows [Semantic Versioning](https://semver.org/) once it
 reaches 1.0; before that, minor version bumps mark feature additions.
 
+## [0.3.0] - 2026-08-07
+
+### Added
+- App icon: wired into the window titlebar/taskbar (all platforms), the
+  Linux `.desktop` entry + hicolor icon theme, the Windows `.exe` itself,
+  and the macOS `.app` bundle (`Info.plist` `CFBundleIconFile` + `.icns`).
+- Image display support (relative paths, `file://`, and `http(s)://` URLs)
+  for standalone images; inline images degrade to a clickable text link —
+  see `.charter/decisions.md` for why.
+
+### Changed
+- The sidebar directory tree now auto-hides when viewing a single file
+  outside any open folder, rather than staying visible and empty. Manual
+  toggle (Ctrl+B / View -> Toggle Sidebar) is unaffected.
+- Selecting a Recent Files/Folders (MRU) entry now closes the File menu,
+  matching normal menu-click behavior elsewhere in the app.
+
 ## [0.2.0] - 2026-08-03
 
 ### Added

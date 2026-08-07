@@ -1,4 +1,0 @@
-- App icon
-- Hide left-nav directory viewer when viewing a single file
-- Close menu when selecting an MRU item
-- Bump version
